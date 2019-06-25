@@ -3,11 +3,13 @@ module Main exposing (generateRandomIndex, hasWon, main)
 import Api
 import Array
 import Browser
+import Browser.Events
 import Css exposing (..)
 import Html.Styled exposing (Html, button, div, img, text, toUnstyled)
 import Html.Styled.Attributes exposing (css, src)
 import Html.Styled.Events exposing (onClick)
 import Http
+import Json.Decode as D exposing (Decoder)
 import Pendu exposing (Letter, reveal, updatecounter)
 import Random
 
@@ -59,14 +61,11 @@ type Msg
     = OnClickKey Char
     | GotWords (Result Http.Error (List String))
     | RandomInt Int
+    | OnKeyPressed Char
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        _ =
-            Debug.log "msg" msg
-    in
     case msg of
         OnClickKey char ->
             ( updateModel model char, Cmd.none )
@@ -83,6 +82,9 @@ update msg model =
 
         RandomInt int ->
             ( { model | word = Pendu.pickWord int model.words }, Cmd.none )
+
+        OnKeyPressed char ->
+            ( updateModel model char, Cmd.none )
 
 
 updateModel : Model -> Char -> Model
@@ -239,8 +241,33 @@ main =
         { init = init
         , view = view >> toUnstyled
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = \_ -> Browser.Events.onKeyPress keyDecoder
         }
+
+
+keyDecoder : Decoder Msg
+keyDecoder =
+    D.field "key" D.string
+        |> D.andThen
+            (\string ->
+                case String.uncons string of
+                    Just ( char, "" ) ->
+                        let
+                            upperChar =
+                                Char.toUpper char
+
+                            code =
+                                Char.toCode upperChar
+                        in
+                        if code >= 65 && code <= 90 then
+                            D.succeed (OnKeyPressed upperChar)
+
+                        else
+                            D.fail "fail to decode letter char"
+
+                    _ ->
+                        D.fail "failed to decode char"
+            )
 
 
 generateRandomIndex : List String -> Cmd Msg
