@@ -8706,6 +8706,8 @@ var rtfeldman$elm_css$Css$justifyContent = function (fn) {
 		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
 };
 var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
+var rtfeldman$elm_css$Css$paddingLeft = rtfeldman$elm_css$Css$prop1('padding-left');
+var rtfeldman$elm_css$Css$paddingRight = rtfeldman$elm_css$Css$prop1('padding-right');
 var rtfeldman$elm_css$Html$Styled$input = rtfeldman$elm_css$Html$Styled$node('input');
 var elm$json$Json$Encode$bool = _Json_wrap;
 var rtfeldman$elm_css$Html$Styled$Attributes$boolProperty = F2(
@@ -8770,10 +8772,33 @@ var author$project$Main$view = function (page) {
 					[
 						A2(
 						rtfeldman$elm_css$Html$Styled$div,
-						_List_Nil,
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$Attributes$css(
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Css$fontSize(
+										rtfeldman$elm_css$Css$px(40))
+									]))
+							]),
 						_List_fromArray(
 							[
 								rtfeldman$elm_css$Html$Styled$text('Home')
+							])),
+						A2(
+						rtfeldman$elm_css$Html$Styled$div,
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$Attributes$css(
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Css$marginTop(
+										rtfeldman$elm_css$Css$px(20))
+									]))
+							]),
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$text('Choisissez un mode de jeu :')
 							])),
 						A2(
 						rtfeldman$elm_css$Html$Styled$div,
@@ -8803,7 +8828,11 @@ var author$project$Main$view = function (page) {
 												rtfeldman$elm_css$Css$fontSize(
 												rtfeldman$elm_css$Css$px(30)),
 												rtfeldman$elm_css$Css$color(
-												A3(rtfeldman$elm_css$Css$rgb, 148, 99, 71))
+												A3(rtfeldman$elm_css$Css$rgb, 148, 99, 71)),
+												rtfeldman$elm_css$Css$paddingLeft(
+												rtfeldman$elm_css$Css$px(40)),
+												rtfeldman$elm_css$Css$paddingRight(
+												rtfeldman$elm_css$Css$px(40))
 											]))
 									]),
 								_List_fromArray(
@@ -8827,7 +8856,11 @@ var author$project$Main$view = function (page) {
 												rtfeldman$elm_css$Css$color(
 												A3(rtfeldman$elm_css$Css$rgb, 148, 99, 71)),
 												rtfeldman$elm_css$Css$fontSize(
-												rtfeldman$elm_css$Css$px(30))
+												rtfeldman$elm_css$Css$px(30)),
+												rtfeldman$elm_css$Css$padding(
+												rtfeldman$elm_css$Css$px(10)),
+												rtfeldman$elm_css$Css$margin(
+												rtfeldman$elm_css$Css$px(20))
 											]))
 									]),
 								_List_fromArray(
@@ -8944,6 +8977,14 @@ var author$project$Main$view = function (page) {
 								_List_fromArray(
 									[
 										rtfeldman$elm_css$Html$Styled$Events$onClick(author$project$Main$OnClickValid),
+										rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_List_fromArray(
+											[
+												rtfeldman$elm_css$Css$marginTop(
+												rtfeldman$elm_css$Css$px(15)),
+												rtfeldman$elm_css$Css$marginBottom(
+												rtfeldman$elm_css$Css$px(15))
+											])),
 										rtfeldman$elm_css$Html$Styled$Attributes$disabled(
 										elm$core$String$length(string) < 3)
 									]),

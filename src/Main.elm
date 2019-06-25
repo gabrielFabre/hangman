@@ -195,7 +195,17 @@ view page =
     case page of
         Home ->
             div [ css attributes ]
-                [ div [] [ text "Home" ]
+                [ div
+                    [ css
+                        [ fontSize (px 40)
+                        ]
+                    ]
+                    [ text "Home" ]
+                , div
+                    [ css
+                        [ marginTop (px 20) ]
+                    ]
+                    [ text "Choisissez un mode de jeu :" ]
                 , div
                     [ css
                         [ margin (px 20)
@@ -209,6 +219,8 @@ view page =
                             , fontSize
                                 (px 30)
                             , color (rgb 148 99 71)
+                            , paddingLeft (px 40)
+                            , paddingRight (px 40)
                             ]
                         ]
                         [ text "Solo" ]
@@ -219,6 +231,8 @@ view page =
                         , css
                             [ color (rgb 148 99 71)
                             , fontSize (px 30)
+                            , padding (px 10)
+                            , margin (px 20)
                             ]
                         ]
                         [ text "2 joueurs" ]
@@ -268,6 +282,10 @@ view page =
                 , div []
                     [ button
                         [ onClick OnClickValid
+                        , css
+                            [ marginTop (px 15)
+                            , marginBottom (px 15)
+                            ]
                         , Html.Styled.Attributes.disabled (String.length string < 3)
                         ]
                         [ text "Valider" ]
