@@ -14,6 +14,10 @@ import Pendu exposing (Letter, reveal, updatecounter)
 import Random
 
 
+
+-- model
+
+
 type alias Model =
     { word : Maybe (List Letter)
     , counter : Int
@@ -57,11 +61,16 @@ state model =
                 Playing word
 
 
+
+-- update
+
+
 type Msg
     = OnClickKey Char
     | GotWords (Result Http.Error (List String))
     | RandomInt Int
     | OnKeyPressed Char
+    | OnClickReplay
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -86,6 +95,11 @@ update msg model =
         OnKeyPressed char ->
             ( updateModel model char, Cmd.none )
 
+        OnClickReplay ->
+            ( { model | word = Nothing, counter = 10, triedChars = [] }
+            , generateRandomIndex model.words
+            )
+
 
 updateModel : Model -> Char -> Model
 updateModel model char =
@@ -101,6 +115,15 @@ updateModel model char =
             }
 
 
+generateRandomIndex : List String -> Cmd Msg
+generateRandomIndex list =
+    Random.generate RandomInt (Random.int 0 (List.length list - 1))
+
+
+
+-- view
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -114,13 +137,14 @@ view model =
     in
     case state model of
         Initializing ->
-            div [ css [ backgroundColor (rgb 255 0 0) ] ] []
+            div [] []
 
         Won word ->
             div [ css attributes ]
                 [ wordView word
                 , imageView model.counter
                 , div [] [ text "Vous avez gagné !" ]
+                , buttonReplay
                 ]
 
         Lost word ->
@@ -128,6 +152,7 @@ view model =
                 [ wordView word
                 , imageView model.counter
                 , div [] [ text "Vous avez perdu !" ]
+                , buttonReplay
                 ]
 
         Playing word ->
@@ -210,6 +235,38 @@ keyboard triedChars =
         ]
 
 
+imageView : Int -> Html msg
+imageView counter =
+    img [ src ("images/step" ++ String.fromInt counter ++ ".svg") ] []
+
+
+buttonReplay : Html Msg
+buttonReplay =
+    div
+        [ css
+            [ borderRadius (px 5)
+            , marginTop (rem 5)
+            , fontSize (px 12)
+            ]
+        ]
+        [ button
+            [ onClick OnClickReplay
+            , css
+                [ color (rgb 255 255 255)
+                , backgroundColor (rgb 255 51 51)
+                , borderRadius (px 7)
+                , padding2 (px 10) (px 15)
+                , border zero
+                ]
+            ]
+            [ text "Rejouer !" ]
+        ]
+
+
+
+--format
+
+
 format : List Letter -> String
 format list =
     list
@@ -233,6 +290,10 @@ formatLost list =
         |> List.map .char
         |> List.map String.fromChar
         |> String.join " "
+
+
+
+-- main
 
 
 main : Program () Model Msg
@@ -268,18 +329,3 @@ keyDecoder =
                     _ ->
                         D.fail "failed to decode char"
             )
-
-
-generateRandomIndex : List String -> Cmd Msg
-generateRandomIndex list =
-    Random.generate RandomInt (Random.int 0 (List.length list - 1))
-
-
-numberfile : Int -> String
-numberfile counter =
-    "step" ++ String.fromInt counter
-
-
-imageView : Int -> Html msg
-imageView counter =
-    img [ src ("images/step" ++ String.fromInt counter ++ ".svg") ] []
