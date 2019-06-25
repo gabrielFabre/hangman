@@ -1,4 +1,6 @@
-module Pendu exposing (Letter, change, contains, foo, reveal, see, simple, updatecounter)
+module Pendu exposing (Letter, change, contains, foo, pickWord, reveal, see, simple, updatecounter)
+
+import Array
 
 
 contains : String -> Char -> Bool
@@ -60,3 +62,11 @@ updatecounter char letters triedChars counter =
 
     else
         counter - 1
+
+
+pickWord : Int -> List String -> Maybe (List Letter)
+pickWord int list =
+    list
+        |> Array.fromList
+        |> Array.get int
+        |> Maybe.map simple
