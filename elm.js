@@ -4568,11 +4568,16 @@ function _Browser_load(url)
 		}
 	}));
 }
-var elm$core$Array$branchFactor = 32;
-var elm$core$Array$Array_elm_builtin = F4(
-	function (a, b, c, d) {
-		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
-	});
+var author$project$Main$Home = {$: 'Home'};
+var elm$core$Basics$False = {$: 'False'};
+var elm$core$Basics$True = {$: 'True'};
+var elm$core$Result$isOk = function (result) {
+	if (result.$ === 'Ok') {
+		return true;
+	} else {
+		return false;
+	}
+};
 var elm$core$Basics$EQ = {$: 'EQ'};
 var elm$core$Basics$GT = {$: 'GT'};
 var elm$core$Basics$LT = {$: 'LT'};
@@ -4653,6 +4658,11 @@ var elm$core$Array$foldr = F3(
 var elm$core$Array$toList = function (array) {
 	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
 };
+var elm$core$Array$branchFactor = 32;
+var elm$core$Array$Array_elm_builtin = F4(
+	function (a, b, c, d) {
+		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
+	});
 var elm$core$Basics$ceiling = _Basics_ceiling;
 var elm$core$Basics$fdiv = _Basics_fdiv;
 var elm$core$Basics$logBase = F2(
@@ -4777,7 +4787,6 @@ var elm$core$Array$builderToArray = F2(
 				builder.tail);
 		}
 	});
-var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$idiv = _Basics_idiv;
 var elm$core$Basics$lt = _Utils_lt;
 var elm$core$Elm$JsArray$initialize = _JsArray_initialize;
@@ -4829,14 +4838,6 @@ var elm$core$Result$Err = function (a) {
 };
 var elm$core$Result$Ok = function (a) {
 	return {$: 'Ok', a: a};
-};
-var elm$core$Basics$True = {$: 'True'};
-var elm$core$Result$isOk = function (result) {
-	if (result.$ === 'Ok') {
-		return true;
-	} else {
-		return false;
-	}
 };
 var elm$json$Json$Decode$Failure = F2(
 	function (a, b) {
@@ -5043,9 +5044,36 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 			}
 		}
 	});
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var author$project$Main$init = function (_n0) {
+	return _Utils_Tuple2(author$project$Main$Home, elm$core$Platform$Cmd$none);
+};
+var author$project$Main$OnKeyPressed = function (a) {
+	return {$: 'OnKeyPressed', a: a};
+};
+var elm$core$Char$toUpper = _Char_toUpper;
+var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$fail = _Json_fail;
 var elm$json$Json$Decode$field = _Json_decodeField;
-var elm$json$Json$Decode$list = _Json_decodeList;
 var elm$json$Json$Decode$string = _Json_decodeString;
+var elm$json$Json$Decode$succeed = _Json_succeed;
+var author$project$Main$keyDecoder = A2(
+	elm$json$Json$Decode$andThen,
+	function (string) {
+		var _n0 = elm$core$String$uncons(string);
+		if ((_n0.$ === 'Just') && (_n0.a.b === '')) {
+			var _n1 = _n0.a;
+			var _char = _n1.a;
+			return elm$core$Char$isAlpha(_char) ? elm$json$Json$Decode$succeed(
+				author$project$Main$OnKeyPressed(
+					elm$core$Char$toUpper(_char))) : elm$json$Json$Decode$fail('failed to decode letter char');
+		} else {
+			return elm$json$Json$Decode$fail('failed to decode char');
+		}
+	},
+	A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+var elm$json$Json$Decode$list = _Json_decodeList;
 var author$project$Api$wordsDecoder = A2(
 	elm$json$Json$Decode$field,
 	'words',
@@ -5938,38 +5966,15 @@ var author$project$Api$words = function (message) {
 			url: 'words.json'
 		});
 };
+var author$project$Main$Game = function (a) {
+	return {$: 'Game', a: a};
+};
 var author$project$Main$GotWords = function (a) {
 	return {$: 'GotWords', a: a};
 };
-var author$project$Main$init = function (_n0) {
-	return _Utils_Tuple2(
-		{counter: 10, triedChars: _List_Nil, word: elm$core$Maybe$Nothing, words: _List_Nil},
-		author$project$Api$words(author$project$Main$GotWords));
+var author$project$Main$Input = function (a) {
+	return {$: 'Input', a: a};
 };
-var author$project$Main$OnKeyPressed = function (a) {
-	return {$: 'OnKeyPressed', a: a};
-};
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Char$toUpper = _Char_toUpper;
-var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$fail = _Json_fail;
-var elm$json$Json$Decode$succeed = _Json_succeed;
-var author$project$Main$keyDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (string) {
-		var _n0 = elm$core$String$uncons(string);
-		if ((_n0.$ === 'Just') && (_n0.a.b === '')) {
-			var _n1 = _n0.a;
-			var _char = _n1.a;
-			var upperChar = elm$core$Char$toUpper(_char);
-			var code = elm$core$Char$toCode(upperChar);
-			return ((code >= 65) && (code <= 90)) ? elm$json$Json$Decode$succeed(
-				author$project$Main$OnKeyPressed(upperChar)) : elm$json$Json$Decode$fail('fail to decode letter char');
-		} else {
-			return elm$json$Json$Decode$fail('failed to decode char');
-		}
-	},
-	A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
 var author$project$Main$RandomInt = function (a) {
 	return {$: 'RandomInt', a: a};
 };
@@ -6131,6 +6136,78 @@ var author$project$Main$generateRandomIndex = function (list) {
 			0,
 			elm$core$List$length(list) - 1));
 };
+var elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var elm$core$Basics$not = _Basics_not;
+var elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var elm$core$List$all = F2(
+	function (isOkay, list) {
+		return !A2(
+			elm$core$List$any,
+			A2(elm$core$Basics$composeL, elm$core$Basics$not, isOkay),
+			list);
+	});
+var elm$core$String$length = _String_length;
+var elm$core$String$foldr = _String_foldr;
+var elm$core$String$toList = function (string) {
+	return A3(elm$core$String$foldr, elm$core$List$cons, _List_Nil, string);
+};
+var author$project$Main$isInputGood = function (input) {
+	return (A2(
+		elm$core$List$all,
+		elm$core$Char$isAlpha,
+		elm$core$String$toList(input)) && (elm$core$String$length(input) <= 15)) ? elm$core$Maybe$Just(input) : elm$core$Maybe$Nothing;
+};
+var author$project$Main$Initializing = {$: 'Initializing'};
+var author$project$Main$Lost = function (a) {
+	return {$: 'Lost', a: a};
+};
+var author$project$Main$Playing = function (a) {
+	return {$: 'Playing', a: a};
+};
+var author$project$Main$Won = function (a) {
+	return {$: 'Won', a: a};
+};
+var author$project$Main$hasWon = function (list) {
+	return A2(
+		elm$core$List$all,
+		function ($) {
+			return $.isGuessed;
+		},
+		list);
+};
+var author$project$Main$state = function (model) {
+	var _n0 = model.word;
+	if (_n0.$ === 'Nothing') {
+		return author$project$Main$Initializing;
+	} else {
+		var word = _n0.a;
+		return (!model.counter) ? author$project$Main$Lost(word) : (author$project$Main$hasWon(word) ? author$project$Main$Won(word) : author$project$Main$Playing(word));
+	}
+};
 var author$project$Pendu$change = F2(
 	function (_char, letter) {
 		return _Utils_eq(letter._char, _char) ? _Utils_update(
@@ -6157,27 +6234,6 @@ var author$project$Pendu$reveal = F2(
 			elm$core$List$map,
 			author$project$Pendu$change(_char),
 			list);
-	});
-var elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
 	});
 var elm$core$List$member = F2(
 	function (x, xs) {
@@ -6223,10 +6279,6 @@ var author$project$Main$updateModel = F2(
 	});
 var author$project$Pendu$foo = function (c) {
 	return {_char: c, isGuessed: false};
-};
-var elm$core$String$foldr = _String_foldr;
-var elm$core$String$toList = function (string) {
-	return A3(elm$core$String$foldr, elm$core$List$cons, _List_Nil, string);
 };
 var author$project$Pendu$simple = function (string) {
 	return A2(
@@ -6296,6 +6348,7 @@ var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
 var elm$core$Array$tailIndex = function (len) {
 	return (len >>> 5) << 5;
 };
+var elm$core$Basics$ge = _Utils_ge;
 var elm$core$Array$get = F2(
 	function (index, _n0) {
 		var len = _n0.a;
@@ -6328,50 +6381,136 @@ var author$project$Pendu$pickWord = F2(
 				_int,
 				elm$core$Array$fromList(list)));
 	});
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var elm$core$Debug$log = _Debug_log;
+var elm$core$String$toUpper = _String_toUpper;
 var author$project$Main$update = F2(
-	function (msg, model) {
-		switch (msg.$) {
-			case 'OnClickKey':
-				var _char = msg.a;
-				return _Utils_Tuple2(
-					A2(author$project$Main$updateModel, model, _char),
-					elm$core$Platform$Cmd$none);
-			case 'GotWords':
-				if (msg.a.$ === 'Ok') {
-					var words = msg.a.a;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{words: words}),
-						author$project$Main$generateRandomIndex(words));
-				} else {
-					var error = msg.a.a;
-					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-				}
-			case 'RandomInt':
-				var _int = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							word: A2(author$project$Pendu$pickWord, _int, model.words)
-						}),
-					elm$core$Platform$Cmd$none);
-			case 'OnKeyPressed':
-				var _char = msg.a;
-				return _Utils_Tuple2(
-					A2(author$project$Main$updateModel, model, _char),
-					elm$core$Platform$Cmd$none);
-			default:
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{counter: 10, triedChars: _List_Nil, word: elm$core$Maybe$Nothing}),
-					author$project$Main$generateRandomIndex(model.words));
+	function (msg, page) {
+		var _n0 = A2(elm$core$Debug$log, 'msg', msg);
+		var _n1 = _Utils_Tuple2(page, msg);
+		_n1$10:
+		while (true) {
+			switch (_n1.a.$) {
+				case 'Home':
+					switch (_n1.b.$) {
+						case 'OnClickSolo':
+							var _n2 = _n1.a;
+							var _n3 = _n1.b;
+							return _Utils_Tuple2(
+								author$project$Main$Game(
+									{counter: 10, triedChars: _List_Nil, word: elm$core$Maybe$Nothing, words: _List_Nil}),
+								author$project$Api$words(author$project$Main$GotWords));
+						case 'OnClickInput':
+							var _n4 = _n1.a;
+							var _n5 = _n1.b;
+							return _Utils_Tuple2(
+								author$project$Main$Input(''),
+								elm$core$Platform$Cmd$none);
+						default:
+							break _n1$10;
+					}
+				case 'Game':
+					switch (_n1.b.$) {
+						case 'OnClickKey':
+							var model = _n1.a.a;
+							var _char = _n1.b.a;
+							return _Utils_Tuple2(
+								author$project$Main$Game(
+									A2(author$project$Main$updateModel, model, _char)),
+								elm$core$Platform$Cmd$none);
+						case 'GotWords':
+							if (_n1.b.a.$ === 'Ok') {
+								var model = _n1.a.a;
+								var words = _n1.b.a.a;
+								return _Utils_Tuple2(
+									author$project$Main$Game(
+										_Utils_update(
+											model,
+											{words: words})),
+									author$project$Main$generateRandomIndex(words));
+							} else {
+								var model = _n1.a.a;
+								var error = _n1.b.a.a;
+								return _Utils_Tuple2(
+									author$project$Main$Game(model),
+									elm$core$Platform$Cmd$none);
+							}
+						case 'RandomInt':
+							var model = _n1.a.a;
+							var _int = _n1.b.a;
+							return _Utils_Tuple2(
+								author$project$Main$Game(
+									_Utils_update(
+										model,
+										{
+											word: A2(author$project$Pendu$pickWord, _int, model.words)
+										})),
+								elm$core$Platform$Cmd$none);
+						case 'OnKeyPressed':
+							var model = _n1.a.a;
+							var _char = _n1.b.a;
+							var _n6 = author$project$Main$state(model);
+							if (_n6.$ === 'Playing') {
+								return _Utils_Tuple2(
+									author$project$Main$Game(
+										A2(author$project$Main$updateModel, model, _char)),
+									elm$core$Platform$Cmd$none);
+							} else {
+								return _Utils_Tuple2(
+									author$project$Main$Game(model),
+									elm$core$Platform$Cmd$none);
+							}
+						case 'OnClickReplay':
+							var model = _n1.a.a;
+							var _n7 = _n1.b;
+							return _Utils_Tuple2(
+								author$project$Main$Game(
+									_Utils_update(
+										model,
+										{counter: 10, triedChars: _List_Nil, word: elm$core$Maybe$Nothing})),
+								author$project$Main$generateRandomIndex(model.words));
+						default:
+							break _n1$10;
+					}
+				default:
+					switch (_n1.b.$) {
+						case 'OnInput':
+							var input = _n1.b.a;
+							var _n8 = author$project$Main$isInputGood(input);
+							if (_n8.$ === 'Just') {
+								var validString = _n8.a;
+								return _Utils_Tuple2(
+									author$project$Main$Input(validString),
+									elm$core$Platform$Cmd$none);
+							} else {
+								return _Utils_Tuple2(page, elm$core$Platform$Cmd$none);
+							}
+						case 'OnClickValid':
+							var string = _n1.a.a;
+							var _n9 = _n1.b;
+							return _Utils_Tuple2(
+								author$project$Main$Game(
+									{
+										counter: 10,
+										triedChars: _List_Nil,
+										word: elm$core$Maybe$Just(
+											author$project$Pendu$simple(
+												elm$core$String$toUpper(string))),
+										words: _List_Nil
+									}),
+								elm$core$Platform$Cmd$none);
+						default:
+							break _n1$10;
+					}
+			}
 		}
+		return _Utils_Tuple2(page, elm$core$Platform$Cmd$none);
 	});
+var author$project$Main$OnClickInput = {$: 'OnClickInput'};
+var author$project$Main$OnClickSolo = {$: 'OnClickSolo'};
+var author$project$Main$OnClickValid = {$: 'OnClickValid'};
+var author$project$Main$OnInput = function (a) {
+	return {$: 'OnInput', a: a};
+};
 var author$project$Main$OnClickReplay = {$: 'OnClickReplay'};
 var rtfeldman$elm_css$Css$Preprocess$AppendProperty = function (a) {
 	return {$: 'AppendProperty', a: a};
@@ -7743,19 +7882,6 @@ var rtfeldman$elm_css$Css$Preprocess$Resolve$toStructure = function (_n0) {
 		A2(elm$core$List$concatMap, rtfeldman$elm_css$Css$Preprocess$unwrapSnippet, snippets));
 	return {charset: charset, declarations: declarations, imports: imports, namespaces: namespaces};
 };
-var elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var elm$core$Basics$not = _Basics_not;
-var elm$core$List$all = F2(
-	function (isOkay, list) {
-		return !A2(
-			elm$core$List$any,
-			A2(elm$core$Basics$composeL, elm$core$Basics$not, isOkay),
-			list);
-	});
 var elm$core$String$isEmpty = function (string) {
 	return string === '';
 };
@@ -8445,33 +8571,6 @@ var author$project$Main$keyboard = function (triedChars) {
 						A2(elm$core$List$range, 78, 90))))
 			]));
 };
-var author$project$Main$Initializing = {$: 'Initializing'};
-var author$project$Main$Lost = function (a) {
-	return {$: 'Lost', a: a};
-};
-var author$project$Main$Playing = function (a) {
-	return {$: 'Playing', a: a};
-};
-var author$project$Main$Won = function (a) {
-	return {$: 'Won', a: a};
-};
-var author$project$Main$hasWon = function (list) {
-	return A2(
-		elm$core$List$all,
-		function ($) {
-			return $.isGuessed;
-		},
-		list);
-};
-var author$project$Main$state = function (model) {
-	var _n0 = model.word;
-	if (_n0.$ === 'Nothing') {
-		return author$project$Main$Initializing;
-	} else {
-		var word = _n0.a;
-		return (!model.counter) ? author$project$Main$Lost(word) : (author$project$Main$hasWon(word) ? author$project$Main$Won(word) : author$project$Main$Playing(word));
-	}
-};
 var author$project$Main$formatLetter = function (letter) {
 	return letter.isGuessed ? letter._char : _Utils_chr('_');
 };
@@ -8606,7 +8705,50 @@ var rtfeldman$elm_css$Css$justifyContent = function (fn) {
 		'justify-content',
 		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
 };
-var author$project$Main$view = function (model) {
+var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
+var rtfeldman$elm_css$Html$Styled$input = rtfeldman$elm_css$Html$Styled$node('input');
+var elm$json$Json$Encode$bool = _Json_wrap;
+var rtfeldman$elm_css$Html$Styled$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			rtfeldman$elm_css$VirtualDom$Styled$property,
+			key,
+			elm$json$Json$Encode$bool(bool));
+	});
+var rtfeldman$elm_css$Html$Styled$Attributes$disabled = rtfeldman$elm_css$Html$Styled$Attributes$boolProperty('disabled');
+var rtfeldman$elm_css$Html$Styled$Attributes$value = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('value');
+var rtfeldman$elm_css$Html$Styled$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			rtfeldman$elm_css$VirtualDom$Styled$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
+	});
+var rtfeldman$elm_css$Html$Styled$Events$targetValue = A2(
+	elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	elm$json$Json$Decode$string);
+var rtfeldman$elm_css$Html$Styled$Events$onInput = function (tagger) {
+	return A2(
+		rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn,
+		'input',
+		A2(
+			elm$json$Json$Decode$map,
+			rtfeldman$elm_css$Html$Styled$Events$alwaysStop,
+			A2(elm$json$Json$Decode$map, tagger, rtfeldman$elm_css$Html$Styled$Events$targetValue)));
+};
+var author$project$Main$view = function (page) {
 	var attributes = _List_fromArray(
 		[
 			rtfeldman$elm_css$Css$flexGrow(
@@ -8616,12 +8758,8 @@ var author$project$Main$view = function (model) {
 			rtfeldman$elm_css$Css$justifyContent(rtfeldman$elm_css$Css$center),
 			rtfeldman$elm_css$Css$alignItems(rtfeldman$elm_css$Css$center)
 		]);
-	var _n0 = author$project$Main$state(model);
-	switch (_n0.$) {
-		case 'Initializing':
-			return A2(rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_Nil);
-		case 'Won':
-			var word = _n0.a;
+	switch (page.$) {
+		case 'Home':
 			return A2(
 				rtfeldman$elm_css$Html$Styled$div,
 				_List_fromArray(
@@ -8630,40 +8768,139 @@ var author$project$Main$view = function (model) {
 					]),
 				_List_fromArray(
 					[
-						author$project$Main$wordView(word),
-						author$project$Main$imageView(model.counter),
 						A2(
 						rtfeldman$elm_css$Html$Styled$div,
 						_List_Nil,
 						_List_fromArray(
 							[
-								rtfeldman$elm_css$Html$Styled$text('Vous avez gagné !')
+								rtfeldman$elm_css$Html$Styled$text('Home')
 							])),
-						author$project$Main$buttonReplay
-					]));
-		case 'Lost':
-			var word = _n0.a;
-			return A2(
-				rtfeldman$elm_css$Html$Styled$div,
-				_List_fromArray(
-					[
-						rtfeldman$elm_css$Html$Styled$Attributes$css(attributes)
-					]),
-				_List_fromArray(
-					[
-						author$project$Main$wordView(word),
-						author$project$Main$imageView(model.counter),
+						A2(
+						rtfeldman$elm_css$Html$Styled$div,
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$Attributes$css(
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Css$margin(
+										rtfeldman$elm_css$Css$px(20))
+									]))
+							]),
+						_List_fromArray(
+							[
+								A2(
+								rtfeldman$elm_css$Html$Styled$button,
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$Events$onClick(author$project$Main$OnClickSolo),
+										rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_List_fromArray(
+											[
+												rtfeldman$elm_css$Css$padding(
+												rtfeldman$elm_css$Css$px(10)),
+												rtfeldman$elm_css$Css$margin(
+												rtfeldman$elm_css$Css$px(20)),
+												rtfeldman$elm_css$Css$fontSize(
+												rtfeldman$elm_css$Css$px(30)),
+												rtfeldman$elm_css$Css$color(
+												A3(rtfeldman$elm_css$Css$rgb, 148, 99, 71))
+											]))
+									]),
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$text('Solo')
+									]))
+							])),
 						A2(
 						rtfeldman$elm_css$Html$Styled$div,
 						_List_Nil,
 						_List_fromArray(
 							[
-								rtfeldman$elm_css$Html$Styled$text('Vous avez perdu !')
-							])),
-						author$project$Main$buttonReplay
+								A2(
+								rtfeldman$elm_css$Html$Styled$button,
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$Events$onClick(author$project$Main$OnClickInput),
+										rtfeldman$elm_css$Html$Styled$Attributes$css(
+										_List_fromArray(
+											[
+												rtfeldman$elm_css$Css$color(
+												A3(rtfeldman$elm_css$Css$rgb, 148, 99, 71)),
+												rtfeldman$elm_css$Css$fontSize(
+												rtfeldman$elm_css$Css$px(30))
+											]))
+									]),
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$text('2 joueurs')
+									]))
+							]))
 					]));
+		case 'Game':
+			var model = page.a;
+			var _n1 = author$project$Main$state(model);
+			switch (_n1.$) {
+				case 'Initializing':
+					return A2(rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_Nil);
+				case 'Won':
+					var word = _n1.a;
+					return A2(
+						rtfeldman$elm_css$Html$Styled$div,
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$Attributes$css(attributes)
+							]),
+						_List_fromArray(
+							[
+								author$project$Main$wordView(word),
+								author$project$Main$imageView(model.counter),
+								A2(
+								rtfeldman$elm_css$Html$Styled$div,
+								_List_Nil,
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$text('Vous avez gagné !')
+									])),
+								author$project$Main$buttonReplay
+							]));
+				case 'Lost':
+					var word = _n1.a;
+					return A2(
+						rtfeldman$elm_css$Html$Styled$div,
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$Attributes$css(attributes)
+							]),
+						_List_fromArray(
+							[
+								author$project$Main$wordView(word),
+								author$project$Main$imageView(model.counter),
+								A2(
+								rtfeldman$elm_css$Html$Styled$div,
+								_List_Nil,
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$text('Vous avez perdu !')
+									])),
+								author$project$Main$buttonReplay
+							]));
+				default:
+					var word = _n1.a;
+					return A2(
+						rtfeldman$elm_css$Html$Styled$div,
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$Attributes$css(attributes)
+							]),
+						_List_fromArray(
+							[
+								author$project$Main$wordView(word),
+								author$project$Main$imageView(model.counter),
+								author$project$Main$keyboard(model.triedChars)
+							]));
+			}
 		default:
-			var word = _n0.a;
+			var string = page.a;
 			return A2(
 				rtfeldman$elm_css$Html$Styled$div,
 				_List_fromArray(
@@ -8672,9 +8909,49 @@ var author$project$Main$view = function (model) {
 					]),
 				_List_fromArray(
 					[
-						author$project$Main$wordView(word),
-						author$project$Main$imageView(model.counter),
-						author$project$Main$keyboard(model.triedChars)
+						A2(
+						rtfeldman$elm_css$Html$Styled$div,
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$Attributes$css(
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Css$margin(
+										rtfeldman$elm_css$Css$px(10)),
+										rtfeldman$elm_css$Css$marginBottom(
+										rtfeldman$elm_css$Css$px(10))
+									]))
+							]),
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$text('Joueur A : choisissez un mot à faire deviner au joueur B : ')
+							])),
+						A2(
+						rtfeldman$elm_css$Html$Styled$input,
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$Events$onInput(author$project$Main$OnInput),
+								rtfeldman$elm_css$Html$Styled$Attributes$value(string)
+							]),
+						_List_Nil),
+						A2(
+						rtfeldman$elm_css$Html$Styled$div,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								rtfeldman$elm_css$Html$Styled$button,
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$Events$onClick(author$project$Main$OnClickValid),
+										rtfeldman$elm_css$Html$Styled$Attributes$disabled(
+										elm$core$String$length(string) < 3)
+									]),
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Html$Styled$text('Valider')
+									]))
+							]))
 					]));
 	}
 };
@@ -8750,7 +9027,6 @@ var elm$core$Task$perform = F2(
 			elm$core$Task$Perform(
 				A2(elm$core$Task$map, toMessage, task)));
 	});
-var elm$core$String$length = _String_length;
 var elm$core$String$slice = _String_slice;
 var elm$core$String$dropLeft = F2(
 	function (n, string) {
@@ -9631,7 +9907,7 @@ var rtfeldman$elm_css$Html$Styled$toUnstyled = rtfeldman$elm_css$VirtualDom$Styl
 var author$project$Main$main = elm$browser$Browser$element(
 	{
 		init: author$project$Main$init,
-		subscriptions: function (_n0) {
+		subscriptions: function (page) {
 			return elm$browser$Browser$Events$onKeyPress(author$project$Main$keyDecoder);
 		},
 		update: author$project$Main$update,

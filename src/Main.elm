@@ -5,9 +5,9 @@ import Array
 import Browser
 import Browser.Events
 import Css exposing (..)
-import Html.Styled exposing (Html, button, div, img, text, toUnstyled)
-import Html.Styled.Attributes exposing (css, src)
-import Html.Styled.Events exposing (onClick)
+import Html.Styled exposing (Html, button, div, img, input, text, toUnstyled)
+import Html.Styled.Attributes exposing (css, src, value)
+import Html.Styled.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as D exposing (Decoder)
 import Pendu exposing (Letter, reveal, updatecounter)
@@ -18,6 +18,12 @@ import Random
 -- model
 
 
+type Page
+    = Home
+    | Game Model
+    | Input String
+
+
 type alias Model =
     { word : Maybe (List Letter)
     , counter : Int
@@ -26,15 +32,9 @@ type alias Model =
     }
 
 
-init : () -> ( Model, Cmd Msg )
+init : () -> ( Page, Cmd Msg )
 init _ =
-    ( { word = Nothing
-      , counter = 10
-      , triedChars = []
-      , words = []
-      }
-    , Api.words GotWords
-    )
+    ( Home, Cmd.none )
 
 
 type State
@@ -66,39 +66,87 @@ state model =
 
 
 type Msg
-    = OnClickKey Char
+    = OnClickSolo
+    | OnClickInput
+    | OnClickKey Char
     | GotWords (Result Http.Error (List String))
     | RandomInt Int
     | OnKeyPressed Char
     | OnClickReplay
+    | OnInput String
+    | OnClickValid
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        OnClickKey char ->
-            ( updateModel model char, Cmd.none )
+update : Msg -> Page -> ( Page, Cmd Msg )
+update msg page =
+    let
+        _ =
+            Debug.log "msg" msg
+    in
+    case ( page, msg ) of
+        ( Home, OnClickSolo ) ->
+            ( Game
+                { word = Nothing
+                , counter = 10
+                , triedChars = []
+                , words = []
+                }
+            , Api.words GotWords
+            )
 
-        GotWords (Ok words) ->
-            ( { model
-                | words = words
-              }
+        ( Home, OnClickInput ) ->
+            ( Input "", Cmd.none )
+
+        ( Game model, OnClickKey char ) ->
+            ( Game (updateModel model char), Cmd.none )
+
+        ( Game model, GotWords (Ok words) ) ->
+            ( Game
+                { model
+                    | words = words
+                }
             , generateRandomIndex words
             )
 
-        GotWords (Err error) ->
-            ( model, Cmd.none )
+        ( Game model, GotWords (Err error) ) ->
+            ( Game model, Cmd.none )
 
-        RandomInt int ->
-            ( { model | word = Pendu.pickWord int model.words }, Cmd.none )
+        ( Game model, RandomInt int ) ->
+            ( Game { model | word = Pendu.pickWord int model.words }, Cmd.none )
 
-        OnKeyPressed char ->
-            ( updateModel model char, Cmd.none )
+        ( Game model, OnKeyPressed char ) ->
+            case state model of
+                Playing _ ->
+                    ( Game (updateModel model char), Cmd.none )
 
-        OnClickReplay ->
-            ( { model | word = Nothing, counter = 10, triedChars = [] }
+                _ ->
+                    ( Game model, Cmd.none )
+
+        ( Game model, OnClickReplay ) ->
+            ( Game { model | word = Nothing, counter = 10, triedChars = [] }
             , generateRandomIndex model.words
             )
+
+        ( Input _, OnInput input ) ->
+            case isInputGood input of
+                Just validString ->
+                    ( Input validString, Cmd.none )
+
+                Nothing ->
+                    ( page, Cmd.none )
+
+        ( Input string, OnClickValid ) ->
+            ( Game
+                { word = Just (Pendu.simple (String.toUpper string))
+                , counter = 10
+                , triedChars = []
+                , words = []
+                }
+            , Cmd.none
+            )
+
+        _ ->
+            ( page, Cmd.none )
 
 
 updateModel : Model -> Char -> Model
@@ -120,12 +168,21 @@ generateRandomIndex list =
     Random.generate RandomInt (Random.int 0 (List.length list - 1))
 
 
+isInputGood : String -> Maybe String
+isInputGood input =
+    if List.all Char.isAlpha (String.toList input) && String.length input <= 15 then
+        Just input
+
+    else
+        Nothing
+
+
 
 -- view
 
 
-view : Model -> Html Msg
-view model =
+view : Page -> Html Msg
+view page =
     let
         attributes =
             [ flexGrow (int 1)
@@ -135,33 +192,86 @@ view model =
             , alignItems center
             ]
     in
-    case state model of
-        Initializing ->
-            div [] []
-
-        Won word ->
+    case page of
+        Home ->
             div [ css attributes ]
-                [ wordView word
-                , imageView model.counter
-                , div [] [ text "Vous avez gagné !" ]
-                , buttonReplay
+                [ div [] [ text "Home" ]
+                , div
+                    [ css
+                        [ margin (px 20)
+                        ]
+                    ]
+                    [ button
+                        [ onClick OnClickSolo
+                        , css
+                            [ padding (px 10)
+                            , margin (px 20)
+                            , fontSize
+                                (px 30)
+                            , color (rgb 148 99 71)
+                            ]
+                        ]
+                        [ text "Solo" ]
+                    ]
+                , div []
+                    [ button
+                        [ onClick OnClickInput
+                        , css
+                            [ color (rgb 148 99 71)
+                            , fontSize (px 30)
+                            ]
+                        ]
+                        [ text "2 joueurs" ]
+                    ]
                 ]
 
-        Lost word ->
+        Game model ->
+            case state model of
+                Initializing ->
+                    div [] []
+
+                Won word ->
+                    div [ css attributes ]
+                        [ wordView word
+                        , imageView model.counter
+                        , div [] [ text "Vous avez gagné !" ]
+                        , buttonReplay
+                        ]
+
+                Lost word ->
+                    div [ css attributes ]
+                        [ wordView word
+                        , imageView model.counter
+                        , div [] [ text "Vous avez perdu !" ]
+                        , buttonReplay
+                        ]
+
+                Playing word ->
+                    div
+                        [ css attributes
+                        ]
+                        [ wordView word
+                        , imageView model.counter
+                        , keyboard model.triedChars
+                        ]
+
+        Input string ->
             div [ css attributes ]
-                [ wordView word
-                , imageView model.counter
-                , div [] [ text "Vous avez perdu !" ]
-                , buttonReplay
-                ]
-
-        Playing word ->
-            div
-                [ css attributes
-                ]
-                [ wordView word
-                , imageView model.counter
-                , keyboard model.triedChars
+                [ div
+                    [ css
+                        [ margin (px 10)
+                        , marginBottom (px 10)
+                        ]
+                    ]
+                    [ text "Joueur A : choisissez un mot à faire deviner au joueur B : " ]
+                , input [ onInput OnInput, value string ] []
+                , div []
+                    [ button
+                        [ onClick OnClickValid
+                        , Html.Styled.Attributes.disabled (String.length string < 3)
+                        ]
+                        [ text "Valider" ]
+                    ]
                 ]
 
 
@@ -296,13 +406,13 @@ formatLost list =
 -- main
 
 
-main : Program () Model Msg
+main : Program () Page Msg
 main =
     Browser.element
         { init = init
         , view = view >> toUnstyled
         , update = update
-        , subscriptions = \_ -> Browser.Events.onKeyPress keyDecoder
+        , subscriptions = \page -> Browser.Events.onKeyPress keyDecoder
         }
 
 
@@ -313,18 +423,11 @@ keyDecoder =
             (\string ->
                 case String.uncons string of
                     Just ( char, "" ) ->
-                        let
-                            upperChar =
-                                Char.toUpper char
-
-                            code =
-                                Char.toCode upperChar
-                        in
-                        if code >= 65 && code <= 90 then
-                            D.succeed (OnKeyPressed upperChar)
+                        if Char.isAlpha char then
+                            D.succeed (OnKeyPressed (Char.toUpper char))
 
                         else
-                            D.fail "fail to decode letter char"
+                            D.fail "failed to decode letter char"
 
                     _ ->
                         D.fail "failed to decode char"
