@@ -42,6 +42,7 @@ change char letter =
 simple : String -> List Letter
 simple string =
     string
+        |> String.toUpper
         |> String.toList
         |> List.map foo
 
@@ -64,8 +65,8 @@ updatecounter char letters triedChars counter =
         counter - 1
 
 
-pickWord : Int -> List String -> Maybe (List Letter)
-pickWord int list =
+pickWord : List String -> Int -> Maybe (List Letter)
+pickWord list int =
     list
         |> Array.fromList
         |> Array.get int

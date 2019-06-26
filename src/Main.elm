@@ -1,4 +1,4 @@
-module Main exposing (generateRandomIndex, hasWon, main)
+module Main exposing (main)
 
 import Api
 import Array
@@ -19,46 +19,75 @@ import Random
 
 
 type Page
-    = Home
+    = Home (Maybe (List String))
     | Game Model
     | Input String
 
 
 type alias Model =
-    { word : Maybe (List Letter)
+    { word : List Letter
     , counter : Int
     , triedChars : List Char
-    , words : List String
+    , mode : Mode
     }
+
+
+initialSoloModel : List Letter -> ( String, List String ) -> Model
+initialSoloModel word ( head, tail ) =
+    { word = word
+    , counter = 10
+    , triedChars = []
+    , mode = Solo head tail
+    }
+
+
+type Mode
+    = Solo String (List String)
+    | Multi
 
 
 init : () -> ( Page, Cmd Msg )
 init _ =
-    ( Home, Cmd.none )
+    ( Home Nothing, Api.words GotWords )
+
+
+
+-- ( Game
+--     { word =
+--         [ { char = 'L', isGuessed = False }
+--         , { char = 'E', isGuessed = False }
+--         , { char = 'B', isGuessed = False }
+--         , { char = 'O', isGuessed = True }
+--         , { char = 'N', isGuessed = False }
+--         , { char = 'C', isGuessed = False }
+--         , { char = 'O', isGuessed = True }
+--         , { char = 'I', isGuessed = False }
+--         , { char = 'N', isGuessed = False }
+--         ]
+--     , counter = 0
+--     , triedChars = [ 'O' ]
+--     , mode = Multi
+--     }
+-- , Cmd.none
+-- )
 
 
 type State
-    = Initializing
-    | Playing (List Letter)
-    | Lost (List Letter)
-    | Won (List Letter)
+    = Playing
+    | Lost
+    | Won
 
 
 state : Model -> State
 state model =
-    case model.word of
-        Nothing ->
-            Initializing
+    if model.counter == 0 then
+        Lost
 
-        Just word ->
-            if model.counter == 0 then
-                Lost word
+    else if hasWon model.word then
+        Won
 
-            else if hasWon word then
-                Won word
-
-            else
-                Playing word
+    else
+        Playing
 
 
 
@@ -70,7 +99,7 @@ type Msg
     | OnClickInput
     | OnClickKey Char
     | GotWords (Result Http.Error (List String))
-    | RandomInt Int
+    | RandomWord ( String, List String ) (List Letter)
     | OnKeyPressed Char
     | OnClickReplay
     | OnInput String
@@ -80,57 +109,38 @@ type Msg
 
 update : Msg -> Page -> ( Page, Cmd Msg )
 update msg page =
-    let
-        _ =
-            Debug.log "msg" msg
-    in
     case ( page, msg ) of
-        ( Home, OnClickSolo ) ->
-            ( Game
-                { word = Nothing
-                , counter = 10
-                , triedChars = []
-                , words = []
-                }
-            , Api.words GotWords
+        ( Home _, GotWords (Ok words) ) ->
+            ( Home (Just words), Cmd.none )
+
+        ( Home _, GotWords (Err error) ) ->
+            ( Home Nothing, Cmd.none )
+
+        ( Home words, OnClickSolo ) ->
+            case words of
+                Just list ->
+                    case list of
+                        [] ->
+                            ( page, Cmd.none )
+
+                        head :: tail ->
+                            ( page, generateRandomWord head tail )
+
+                Nothing ->
+                    ( page, Cmd.none )
+
+        ( Home _, RandomWord ( head, tail ) word ) ->
+            ( Game (initialSoloModel word ( head, tail ))
+            , Cmd.none
             )
 
-        ( Home, OnClickInput ) ->
+        ( Game _, RandomWord ( head, tail ) word ) ->
+            ( Game (initialSoloModel word ( head, tail ))
+            , Cmd.none
+            )
+
+        ( Home _, OnClickInput ) ->
             ( Input "", Cmd.none )
-
-        ( Game model, OnClickKey char ) ->
-            ( Game (updateModel model char), Cmd.none )
-
-        ( Game model, GotWords (Ok words) ) ->
-            ( Game
-                { model
-                    | words = words
-                }
-            , generateRandomIndex words
-            )
-
-        ( Game model, GotWords (Err error) ) ->
-            ( Game model, Cmd.none )
-
-        ( Game model, RandomInt int ) ->
-            ( Game { model | word = Pendu.pickWord int model.words }, Cmd.none )
-
-        ( Game model, OnKeyPressed char ) ->
-            case state model of
-                Playing _ ->
-                    ( Game (updateModel model char), Cmd.none )
-
-                _ ->
-                    ( Game model, Cmd.none )
-
-        ( Game model, OnClickReplay ) ->
-            if List.isEmpty model.words then
-                ( Input "", Cmd.none )
-
-            else
-                ( Game { model | word = Nothing, counter = 10, triedChars = [] }
-                , generateRandomIndex model.words
-                )
 
         ( Input _, OnInput input ) ->
             case isInputGood input of
@@ -142,16 +152,35 @@ update msg page =
 
         ( Input string, OnClickValid ) ->
             ( Game
-                { word = Just (Pendu.simple (String.toUpper string))
+                { word = Pendu.simple (String.toUpper string)
                 , counter = 10
                 , triedChars = []
-                , words = []
+                , mode = Multi
                 }
             , Cmd.none
             )
 
-        ( Game model, onClickHome ) ->
-            ( Home, Cmd.none )
+        ( Game model, OnClickKey char ) ->
+            ( Game (updateModel model char), Cmd.none )
+
+        ( Game model, OnKeyPressed char ) ->
+            case state model of
+                Playing ->
+                    ( Game (updateModel model char), Cmd.none )
+
+                _ ->
+                    ( Game model, Cmd.none )
+
+        ( Game model, OnClickReplay ) ->
+            case model.mode of
+                Solo head tail ->
+                    ( page, generateRandomWord head tail )
+
+                Multi ->
+                    ( Input "", Cmd.none )
+
+        ( Game model, OnClickHome ) ->
+            ( Home Nothing, Api.words GotWords )
 
         _ ->
             ( page, Cmd.none )
@@ -159,21 +188,18 @@ update msg page =
 
 updateModel : Model -> Char -> Model
 updateModel model char =
-    case model.word of
-        Nothing ->
-            model
-
-        Just word ->
-            { model
-                | word = Just (reveal char word)
-                , counter = updatecounter char word model.triedChars model.counter
-                , triedChars = char :: model.triedChars
-            }
+    { model
+        | word = reveal char model.word
+        , counter = updatecounter char model.word model.triedChars model.counter
+        , triedChars = char :: model.triedChars
+    }
 
 
-generateRandomIndex : List String -> Cmd Msg
-generateRandomIndex list =
-    Random.generate RandomInt (Random.int 0 (List.length list - 1))
+generateRandomWord : String -> List String -> Cmd Msg
+generateRandomWord head tail =
+    Random.uniform head tail
+        |> Random.map Pendu.simple
+        |> Random.generate (RandomWord ( head, tail ))
 
 
 isInputGood : String -> Maybe String
@@ -201,7 +227,7 @@ view page =
             ]
     in
     case page of
-        Home ->
+        Home words ->
             div [ css attributes ]
                 [ div
                     [ css
@@ -230,6 +256,7 @@ view page =
                             , paddingLeft (px 40)
                             , paddingRight (px 40)
                             ]
+                        , Html.Styled.Attributes.disabled (isSoloDisabled words)
                         ]
                         [ text "Solo" ]
                     ]
@@ -249,32 +276,33 @@ view page =
 
         Game model ->
             case state model of
-                Initializing ->
-                    div [] []
-
-                Won word ->
+                Won ->
                     div [ css attributes ]
-                        [ wordView word
+                        [ wordView model.word
                         , imageView model.counter
-                        , div [] [ text "Vous avez gagné !" ]
-                        , buttonReplay
-                        , buttonHome
+                        , div [ css [ height (px 150), displayFlex, alignItems center, flexDirection column ] ]
+                            [ div [] [ text "Vous avez gagné !" ]
+                            , buttonReplay
+                            , buttonHome
+                            ]
                         ]
 
-                Lost word ->
+                Lost ->
                     div [ css attributes ]
-                        [ wordView word
+                        [ wordLostView model.word
                         , imageView model.counter
-                        , div [] [ text "Vous avez perdu !" ]
-                        , buttonReplay
-                        , buttonHome
+                        , div [ css [ height (px 150), displayFlex, alignItems center, flexDirection column ] ]
+                            [ div [] [ text "Vous avez perdu !" ]
+                            , buttonReplay
+                            , buttonHome
+                            ]
                         ]
 
-                Playing word ->
+                Playing ->
                     div
                         [ css attributes
                         ]
-                        [ wordView word
+                        [ wordView model.word
                         , imageView model.counter
                         , keyboard model.triedChars
                         ]
@@ -320,27 +348,19 @@ view page =
                 ]
 
 
-wordView : List Letter -> Html msg
-wordView word =
-    div
-        [ css
-            [ marginBottom (rem 5)
-            , fontSize (px 48)
-            ]
-        ]
-        [ text (format word) ]
+isSoloDisabled : Maybe (List String) -> Bool
+isSoloDisabled words =
+    case words of
+        Just list ->
+            case list of
+                [] ->
+                    True
 
+                head :: tail ->
+                    False
 
-livesView : Int -> Html msg
-livesView counter =
-    div
-        [ css
-            [ marginBottom (rem 5)
-            , color (rgb 255 0 0)
-            , fontSize (px 36)
-            ]
-        ]
-        [ text (String.fromInt counter) ]
+        Nothing ->
+            True
 
 
 hasWon : List Letter -> Bool
@@ -376,7 +396,7 @@ key char isDisabled =
 
 keyboard : List Char -> Html Msg
 keyboard triedChars =
-    div []
+    div [ css [ height (px 150) ] ]
         [ div []
             (List.range 65 77
                 |> List.map Char.fromCode
@@ -447,29 +467,52 @@ buttonReplay =
 --format
 
 
-format : List Letter -> String
-format list =
-    list
-        |> List.map formatLetter
-        |> List.map String.fromChar
-        |> String.join " "
+wordView : List Letter -> Html Msg
+wordView word =
+    div
+        [ css
+            [ marginBottom (rem 5)
+            , fontSize (px 48)
+            , displayFlex
+            ]
+        ]
+        (List.map letterView word)
 
 
-formatLetter : Letter -> Char
-formatLetter letter =
+wordLostView : List Letter -> Html Msg
+wordLostView letters =
+    div
+        [ css
+            [ marginBottom (rem 5)
+            , fontSize (px 48)
+            , displayFlex
+            ]
+        ]
+        (List.map letterLostView letters)
+
+
+letterView : Letter -> Html Msg
+letterView letter =
     if letter.isGuessed then
-        letter.char
+        div [ css [ margin (px 10) ] ] [ text (String.fromChar letter.char) ]
 
     else
-        '_'
+        div [ css [ margin (px 10) ] ] [ text "_" ]
 
 
-formatLost : List Letter -> String
-formatLost list =
-    list
-        |> List.map .char
-        |> List.map String.fromChar
-        |> String.join " "
+letterLostView : Letter -> Html Msg
+letterLostView letter =
+    let
+        attributes =
+            if letter.isGuessed then
+                [ margin (px 10) ]
+
+            else
+                [ margin (px 10)
+                , color (rgb 220 0 0)
+                ]
+    in
+    div [ css attributes ] [ text (String.fromChar letter.char) ]
 
 
 
