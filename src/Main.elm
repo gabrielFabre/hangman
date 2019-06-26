@@ -10,8 +10,9 @@ import Html.Styled.Attributes exposing (css, src, value)
 import Html.Styled.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as D exposing (Decoder)
-import Pendu exposing (Letter, reveal, updatecounter)
+import Pendu exposing (updatecounter)
 import Random
+import Set
 
 
 
@@ -25,17 +26,15 @@ type Page
 
 
 type alias Model =
-    { word : List Letter
-    , counter : Int
+    { word : List Char
     , triedChars : List Char
     , mode : Mode
     }
 
 
-initialSoloModel : List Letter -> ( String, List String ) -> Model
+initialSoloModel : List Char -> ( String, List String ) -> Model
 initialSoloModel word ( head, tail ) =
     { word = word
-    , counter = 10
     , triedChars = []
     , mode = Solo head tail
     }
@@ -53,18 +52,7 @@ init _ =
 
 
 -- ( Game
---     { word =
---         [ { char = 'L', isGuessed = False }
---         , { char = 'E', isGuessed = False }
---         , { char = 'B', isGuessed = False }
---         , { char = 'O', isGuessed = True }
---         , { char = 'N', isGuessed = False }
---         , { char = 'C', isGuessed = False }
---         , { char = 'O', isGuessed = True }
---         , { char = 'I', isGuessed = False }
---         , { char = 'N', isGuessed = False }
---         ]
---     , counter = 0
+--     { word = [ 'L', 'E', 'B', 'O', 'N', 'C', 'O', 'I', 'N' ]
 --     , triedChars = [ 'O' ]
 --     , mode = Multi
 --     }
@@ -78,16 +66,38 @@ type State
     | Won
 
 
+counter : List Char -> List Char -> Int
+counter word triedChars =
+    let
+        letters =
+            Set.fromList word
+
+        triedCharsSet =
+            Set.fromList triedChars
+    in
+    10 - Set.size (Set.diff triedCharsSet letters)
+
+
 state : Model -> State
 state model =
-    if model.counter == 0 then
+    if counter model.word model.triedChars == 0 then
         Lost
 
-    else if hasWon model.word then
+    else if hasWon model.word model.triedChars then
         Won
 
     else
         Playing
+
+
+isGuessed : List Char -> Char -> Bool
+isGuessed triedChars char =
+    List.member char triedChars
+
+
+hasWon : List Char -> List Char -> Bool
+hasWon word triedChars =
+    List.all (isGuessed triedChars) word
 
 
 
@@ -99,7 +109,7 @@ type Msg
     | OnClickInput
     | OnClickKey Char
     | GotWords (Result Http.Error (List String))
-    | RandomWord ( String, List String ) (List Letter)
+    | RandomWord ( String, List String ) (List Char)
     | OnKeyPressed Char
     | OnClickReplay
     | OnInput String
@@ -152,8 +162,7 @@ update msg page =
 
         ( Input string, OnClickValid ) ->
             ( Game
-                { word = Pendu.simple (String.toUpper string)
-                , counter = 10
+                { word = String.toList (String.toUpper string)
                 , triedChars = []
                 , mode = Multi
                 }
@@ -189,16 +198,14 @@ update msg page =
 updateModel : Model -> Char -> Model
 updateModel model char =
     { model
-        | word = reveal char model.word
-        , counter = updatecounter char model.word model.triedChars model.counter
-        , triedChars = char :: model.triedChars
+        | triedChars = char :: model.triedChars
     }
 
 
 generateRandomWord : String -> List String -> Cmd Msg
 generateRandomWord head tail =
     Random.uniform head tail
-        |> Random.map Pendu.simple
+        |> Random.map String.toList
         |> Random.generate (RandomWord ( head, tail ))
 
 
@@ -278,8 +285,8 @@ view page =
             case state model of
                 Won ->
                     div [ css attributes ]
-                        [ wordView model.word
-                        , imageView model.counter
+                        [ wordView model.word model.triedChars
+                        , imageView (counter model.word model.triedChars)
                         , div [ css [ height (px 150), displayFlex, alignItems center, flexDirection column ] ]
                             [ div [] [ text "Vous avez gagné !" ]
                             , buttonReplay
@@ -289,8 +296,8 @@ view page =
 
                 Lost ->
                     div [ css attributes ]
-                        [ wordLostView model.word
-                        , imageView model.counter
+                        [ wordLostView model.word model.triedChars
+                        , imageView (counter model.word model.triedChars)
                         , div [ css [ height (px 150), displayFlex, alignItems center, flexDirection column ] ]
                             [ div [] [ text "Vous avez perdu !" ]
                             , buttonReplay
@@ -302,8 +309,8 @@ view page =
                     div
                         [ css attributes
                         ]
-                        [ wordView model.word
-                        , imageView model.counter
+                        [ wordView model.word model.triedChars
+                        , imageView (counter model.word model.triedChars)
                         , keyboard model.triedChars
                         ]
 
@@ -363,11 +370,6 @@ isSoloDisabled words =
             True
 
 
-hasWon : List Letter -> Bool
-hasWon list =
-    List.all .isGuessed list
-
-
 key : Char -> Bool -> Html Msg
 key char isDisabled =
     button
@@ -411,8 +413,8 @@ keyboard triedChars =
 
 
 imageView : Int -> Html msg
-imageView counter =
-    img [ src ("images/step" ++ String.fromInt counter ++ ".svg") ] []
+imageView c =
+    img [ src ("images/step" ++ String.fromInt c ++ ".svg") ] []
 
 
 buttonHome : Html Msg
@@ -467,8 +469,8 @@ buttonReplay =
 --format
 
 
-wordView : List Letter -> Html Msg
-wordView word =
+wordView : List Char -> List Char -> Html Msg
+wordView word triedChars =
     div
         [ css
             [ marginBottom (rem 5)
@@ -476,11 +478,11 @@ wordView word =
             , displayFlex
             ]
         ]
-        (List.map letterView word)
+        (List.map (letterView triedChars) word)
 
 
-wordLostView : List Letter -> Html Msg
-wordLostView letters =
+wordLostView : List Char -> List Char -> Html Msg
+wordLostView letters triedChars =
     div
         [ css
             [ marginBottom (rem 5)
@@ -488,23 +490,23 @@ wordLostView letters =
             , displayFlex
             ]
         ]
-        (List.map letterLostView letters)
+        (List.map (letterLostView triedChars) letters)
 
 
-letterView : Letter -> Html Msg
-letterView letter =
-    if letter.isGuessed then
-        div [ css [ margin (px 10) ] ] [ text (String.fromChar letter.char) ]
+letterView : List Char -> Char -> Html Msg
+letterView triedChars letter =
+    if isGuessed triedChars letter then
+        div [ css [ margin (px 10) ] ] [ text (String.fromChar letter) ]
 
     else
         div [ css [ margin (px 10) ] ] [ text "_" ]
 
 
-letterLostView : Letter -> Html Msg
-letterLostView letter =
+letterLostView : List Char -> Char -> Html Msg
+letterLostView triedChars letter =
     let
         attributes =
-            if letter.isGuessed then
+            if isGuessed triedChars letter then
                 [ margin (px 10) ]
 
             else
@@ -512,7 +514,7 @@ letterLostView letter =
                 , color (rgb 220 0 0)
                 ]
     in
-    div [ css attributes ] [ text (String.fromChar letter.char) ]
+    div [ css attributes ] [ text (String.fromChar letter) ]
 
 
 

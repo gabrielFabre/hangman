@@ -5982,34 +5982,9 @@ var author$project$Main$RandomWord = F2(
 	function (a, b) {
 		return {$: 'RandomWord', a: a, b: b};
 	});
-var author$project$Pendu$foo = function (c) {
-	return {_char: c, isGuessed: false};
-};
-var elm$core$List$map = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, acc) {
-					return A2(
-						elm$core$List$cons,
-						f(x),
-						acc);
-				}),
-			_List_Nil,
-			xs);
-	});
 var elm$core$String$foldr = _String_foldr;
 var elm$core$String$toList = function (string) {
 	return A3(elm$core$String$foldr, elm$core$List$cons, _List_Nil, string);
-};
-var elm$core$String$toUpper = _String_toUpper;
-var author$project$Pendu$simple = function (string) {
-	return A2(
-		elm$core$List$map,
-		author$project$Pendu$foo,
-		elm$core$String$toList(
-			elm$core$String$toUpper(string)));
 };
 var elm$random$Random$Generate = function (a) {
 	return {$: 'Generate', a: a};
@@ -6118,6 +6093,20 @@ var elm$random$Random$generate = F2(
 			elm$random$Random$Generate(
 				A2(elm$random$Random$map, tagger, generator)));
 	});
+var elm$core$List$map = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, acc) {
+					return A2(
+						elm$core$List$cons,
+						f(x),
+						acc);
+				}),
+			_List_Nil,
+			xs);
+	});
 var elm$random$Random$addOne = function (value) {
 	return _Utils_Tuple2(1, value);
 };
@@ -6209,7 +6198,7 @@ var author$project$Main$generateRandomWord = F2(
 				_Utils_Tuple2(head, tail)),
 			A2(
 				elm$random$Random$map,
-				author$project$Pendu$simple,
+				elm$core$String$toList,
 				A2(elm$random$Random$uniform, head, tail)));
 	});
 var author$project$Main$Solo = F2(
@@ -6221,7 +6210,6 @@ var author$project$Main$initialSoloModel = F2(
 		var head = _n0.a;
 		var tail = _n0.b;
 		return {
-			counter: 10,
 			mode: A2(author$project$Main$Solo, head, tail),
 			triedChars: _List_Nil,
 			word: word
@@ -6271,29 +6259,92 @@ var author$project$Main$isInputGood = function (input) {
 var author$project$Main$Lost = {$: 'Lost'};
 var author$project$Main$Playing = {$: 'Playing'};
 var author$project$Main$Won = {$: 'Won'};
-var author$project$Main$hasWon = function (list) {
-	return A2(
-		elm$core$List$all,
-		function ($) {
-			return $.isGuessed;
-		},
-		list);
-};
-var author$project$Main$state = function (model) {
-	return (!model.counter) ? author$project$Main$Lost : (author$project$Main$hasWon(model.word) ? author$project$Main$Won : author$project$Main$Playing);
-};
-var author$project$Pendu$change = F2(
-	function (_char, letter) {
-		return _Utils_eq(letter._char, _char) ? _Utils_update(
-			letter,
-			{isGuessed: true}) : letter;
+var elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3(elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
 	});
-var author$project$Pendu$reveal = F2(
-	function (_char, list) {
-		return A2(
-			elm$core$List$map,
-			author$project$Pendu$change(_char),
-			list);
+var elm$core$Dict$diff = F2(
+	function (t1, t2) {
+		return A3(
+			elm$core$Dict$foldl,
+			F3(
+				function (k, v, t) {
+					return A2(elm$core$Dict$remove, k, t);
+				}),
+			t1,
+			t2);
+	});
+var elm$core$Set$Set_elm_builtin = function (a) {
+	return {$: 'Set_elm_builtin', a: a};
+};
+var elm$core$Set$diff = F2(
+	function (_n0, _n1) {
+		var dict1 = _n0.a;
+		var dict2 = _n1.a;
+		return elm$core$Set$Set_elm_builtin(
+			A2(elm$core$Dict$diff, dict1, dict2));
+	});
+var elm$core$Set$empty = elm$core$Set$Set_elm_builtin(elm$core$Dict$empty);
+var elm$core$Set$insert = F2(
+	function (key, _n0) {
+		var dict = _n0.a;
+		return elm$core$Set$Set_elm_builtin(
+			A3(elm$core$Dict$insert, key, _Utils_Tuple0, dict));
+	});
+var elm$core$Set$fromList = function (list) {
+	return A3(elm$core$List$foldl, elm$core$Set$insert, elm$core$Set$empty, list);
+};
+var elm$core$Dict$sizeHelp = F2(
+	function (n, dict) {
+		sizeHelp:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return n;
+			} else {
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$n = A2(elm$core$Dict$sizeHelp, n + 1, right),
+					$temp$dict = left;
+				n = $temp$n;
+				dict = $temp$dict;
+				continue sizeHelp;
+			}
+		}
+	});
+var elm$core$Dict$size = function (dict) {
+	return A2(elm$core$Dict$sizeHelp, 0, dict);
+};
+var elm$core$Set$size = function (_n0) {
+	var dict = _n0.a;
+	return elm$core$Dict$size(dict);
+};
+var author$project$Main$counter = F2(
+	function (word, triedChars) {
+		var triedCharsSet = elm$core$Set$fromList(triedChars);
+		var letters = elm$core$Set$fromList(word);
+		return 10 - elm$core$Set$size(
+			A2(elm$core$Set$diff, triedCharsSet, letters));
 	});
 var elm$core$List$member = F2(
 	function (x, xs) {
@@ -6304,34 +6355,31 @@ var elm$core$List$member = F2(
 			},
 			xs);
 	});
-var author$project$Pendu$see = F2(
-	function (c, list) {
+var author$project$Main$isGuessed = F2(
+	function (triedChars, _char) {
+		return A2(elm$core$List$member, _char, triedChars);
+	});
+var author$project$Main$hasWon = F2(
+	function (word, triedChars) {
 		return A2(
-			elm$core$List$member,
-			c,
-			A2(
-				elm$core$List$map,
-				function ($) {
-					return $._char;
-				},
-				list));
+			elm$core$List$all,
+			author$project$Main$isGuessed(triedChars),
+			word);
 	});
-var author$project$Pendu$updatecounter = F4(
-	function (_char, letters, triedChars, counter) {
-		return A2(author$project$Pendu$see, _char, letters) ? counter : (A2(elm$core$List$member, _char, triedChars) ? counter : (counter - 1));
-	});
+var author$project$Main$state = function (model) {
+	return (!A2(author$project$Main$counter, model.word, model.triedChars)) ? author$project$Main$Lost : (A2(author$project$Main$hasWon, model.word, model.triedChars) ? author$project$Main$Won : author$project$Main$Playing);
+};
 var author$project$Main$updateModel = F2(
 	function (model, _char) {
 		return _Utils_update(
 			model,
 			{
-				counter: A4(author$project$Pendu$updatecounter, _char, model.word, model.triedChars, model.counter),
-				triedChars: A2(elm$core$List$cons, _char, model.triedChars),
-				word: A2(author$project$Pendu$reveal, _char, model.word)
+				triedChars: A2(elm$core$List$cons, _char, model.triedChars)
 			});
 	});
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var elm$core$String$toUpper = _String_toUpper;
 var author$project$Main$update = F2(
 	function (msg, page) {
 		var _n0 = _Utils_Tuple2(page, msg);
@@ -6410,10 +6458,9 @@ var author$project$Main$update = F2(
 							return _Utils_Tuple2(
 								author$project$Main$Game(
 									{
-										counter: 10,
 										mode: author$project$Main$Multi,
 										triedChars: _List_Nil,
-										word: author$project$Pendu$simple(
+										word: elm$core$String$toList(
 											elm$core$String$toUpper(string))
 									}),
 								elm$core$Platform$Cmd$none);
@@ -8479,13 +8526,13 @@ var rtfeldman$elm_css$Html$Styled$Attributes$stringProperty = F2(
 var rtfeldman$elm_css$Html$Styled$Attributes$src = function (url) {
 	return A2(rtfeldman$elm_css$Html$Styled$Attributes$stringProperty, 'src', url);
 };
-var author$project$Main$imageView = function (counter) {
+var author$project$Main$imageView = function (c) {
 	return A2(
 		rtfeldman$elm_css$Html$Styled$img,
 		_List_fromArray(
 			[
 				rtfeldman$elm_css$Html$Styled$Attributes$src(
-				'images/step' + (elm$core$String$fromInt(counter) + '.svg'))
+				'images/step' + (elm$core$String$fromInt(c) + '.svg'))
 			]),
 		_List_Nil);
 };
@@ -8633,98 +8680,108 @@ var author$project$Main$keyboard = function (triedChars) {
 						A2(elm$core$List$range, 78, 90))))
 			]));
 };
-var author$project$Main$letterLostView = function (letter) {
-	var attributes = letter.isGuessed ? _List_fromArray(
-		[
-			rtfeldman$elm_css$Css$margin(
-			rtfeldman$elm_css$Css$px(10))
-		]) : _List_fromArray(
-		[
-			rtfeldman$elm_css$Css$margin(
-			rtfeldman$elm_css$Css$px(10)),
-			rtfeldman$elm_css$Css$color(
-			A3(rtfeldman$elm_css$Css$rgb, 220, 0, 0))
-		]);
-	return A2(
-		rtfeldman$elm_css$Html$Styled$div,
-		_List_fromArray(
+var author$project$Main$letterLostView = F2(
+	function (triedChars, letter) {
+		var attributes = A2(author$project$Main$isGuessed, triedChars, letter) ? _List_fromArray(
 			[
-				rtfeldman$elm_css$Html$Styled$Attributes$css(attributes)
-			]),
-		_List_fromArray(
+				rtfeldman$elm_css$Css$margin(
+				rtfeldman$elm_css$Css$px(10))
+			]) : _List_fromArray(
 			[
-				rtfeldman$elm_css$Html$Styled$text(
-				elm$core$String$fromChar(letter._char))
-			]));
-};
+				rtfeldman$elm_css$Css$margin(
+				rtfeldman$elm_css$Css$px(10)),
+				rtfeldman$elm_css$Css$color(
+				A3(rtfeldman$elm_css$Css$rgb, 220, 0, 0))
+			]);
+		return A2(
+			rtfeldman$elm_css$Html$Styled$div,
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$Attributes$css(attributes)
+				]),
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$text(
+					elm$core$String$fromChar(letter))
+				]));
+	});
 var rtfeldman$elm_css$Css$displayFlex = A2(rtfeldman$elm_css$Css$property, 'display', 'flex');
 var rtfeldman$elm_css$Css$marginBottom = rtfeldman$elm_css$Css$prop1('margin-bottom');
-var author$project$Main$wordLostView = function (letters) {
-	return A2(
-		rtfeldman$elm_css$Html$Styled$div,
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Html$Styled$Attributes$css(
-				_List_fromArray(
-					[
-						rtfeldman$elm_css$Css$marginBottom(
-						rtfeldman$elm_css$Css$rem(5)),
-						rtfeldman$elm_css$Css$fontSize(
-						rtfeldman$elm_css$Css$px(48)),
-						rtfeldman$elm_css$Css$displayFlex
-					]))
-			]),
-		A2(elm$core$List$map, author$project$Main$letterLostView, letters));
-};
-var author$project$Main$letterView = function (letter) {
-	return letter.isGuessed ? A2(
-		rtfeldman$elm_css$Html$Styled$div,
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Html$Styled$Attributes$css(
-				_List_fromArray(
-					[
-						rtfeldman$elm_css$Css$margin(
-						rtfeldman$elm_css$Css$px(10))
-					]))
-			]),
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Html$Styled$text(
-				elm$core$String$fromChar(letter._char))
-			])) : A2(
-		rtfeldman$elm_css$Html$Styled$div,
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Html$Styled$Attributes$css(
-				_List_fromArray(
-					[
-						rtfeldman$elm_css$Css$margin(
-						rtfeldman$elm_css$Css$px(10))
-					]))
-			]),
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Html$Styled$text('_')
-			]));
-};
-var author$project$Main$wordView = function (word) {
-	return A2(
-		rtfeldman$elm_css$Html$Styled$div,
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Html$Styled$Attributes$css(
-				_List_fromArray(
-					[
-						rtfeldman$elm_css$Css$marginBottom(
-						rtfeldman$elm_css$Css$rem(5)),
-						rtfeldman$elm_css$Css$fontSize(
-						rtfeldman$elm_css$Css$px(48)),
-						rtfeldman$elm_css$Css$displayFlex
-					]))
-			]),
-		A2(elm$core$List$map, author$project$Main$letterView, word));
-};
+var author$project$Main$wordLostView = F2(
+	function (letters, triedChars) {
+		return A2(
+			rtfeldman$elm_css$Html$Styled$div,
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Css$marginBottom(
+							rtfeldman$elm_css$Css$rem(5)),
+							rtfeldman$elm_css$Css$fontSize(
+							rtfeldman$elm_css$Css$px(48)),
+							rtfeldman$elm_css$Css$displayFlex
+						]))
+				]),
+			A2(
+				elm$core$List$map,
+				author$project$Main$letterLostView(triedChars),
+				letters));
+	});
+var author$project$Main$letterView = F2(
+	function (triedChars, letter) {
+		return A2(author$project$Main$isGuessed, triedChars, letter) ? A2(
+			rtfeldman$elm_css$Html$Styled$div,
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Css$margin(
+							rtfeldman$elm_css$Css$px(10))
+						]))
+				]),
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$text(
+					elm$core$String$fromChar(letter))
+				])) : A2(
+			rtfeldman$elm_css$Html$Styled$div,
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Css$margin(
+							rtfeldman$elm_css$Css$px(10))
+						]))
+				]),
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$text('_')
+				]));
+	});
+var author$project$Main$wordView = F2(
+	function (word, triedChars) {
+		return A2(
+			rtfeldman$elm_css$Html$Styled$div,
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Css$marginBottom(
+							rtfeldman$elm_css$Css$rem(5)),
+							rtfeldman$elm_css$Css$fontSize(
+							rtfeldman$elm_css$Css$px(48)),
+							rtfeldman$elm_css$Css$displayFlex
+						]))
+				]),
+			A2(
+				elm$core$List$map,
+				author$project$Main$letterView(triedChars),
+				word));
+	});
 var rtfeldman$elm_css$Css$Internal$property = F2(
 	function (key, value) {
 		return rtfeldman$elm_css$Css$Preprocess$AppendProperty(key + (':' + value));
@@ -9004,8 +9061,9 @@ var author$project$Main$view = function (page) {
 							]),
 						_List_fromArray(
 							[
-								author$project$Main$wordView(model.word),
-								author$project$Main$imageView(model.counter),
+								A2(author$project$Main$wordView, model.word, model.triedChars),
+								author$project$Main$imageView(
+								A2(author$project$Main$counter, model.word, model.triedChars)),
 								A2(
 								rtfeldman$elm_css$Html$Styled$div,
 								_List_fromArray(
@@ -9042,8 +9100,9 @@ var author$project$Main$view = function (page) {
 							]),
 						_List_fromArray(
 							[
-								author$project$Main$wordLostView(model.word),
-								author$project$Main$imageView(model.counter),
+								A2(author$project$Main$wordLostView, model.word, model.triedChars),
+								author$project$Main$imageView(
+								A2(author$project$Main$counter, model.word, model.triedChars)),
 								A2(
 								rtfeldman$elm_css$Html$Styled$div,
 								_List_fromArray(
@@ -9080,8 +9139,9 @@ var author$project$Main$view = function (page) {
 							]),
 						_List_fromArray(
 							[
-								author$project$Main$wordView(model.word),
-								author$project$Main$imageView(model.counter),
+								A2(author$project$Main$wordView, model.word, model.triedChars),
+								author$project$Main$imageView(
+								A2(author$project$Main$counter, model.word, model.triedChars)),
 								author$project$Main$keyboard(model.triedChars)
 							]));
 			}
@@ -9445,31 +9505,6 @@ var elm$core$Dict$fromList = function (assocs) {
 		elm$core$Dict$empty,
 		assocs);
 };
-var elm$core$Dict$foldl = F3(
-	function (func, acc, dict) {
-		foldl:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return acc;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$func = func,
-					$temp$acc = A3(
-					func,
-					key,
-					value,
-					A3(elm$core$Dict$foldl, func, acc, left)),
-					$temp$dict = right;
-				func = $temp$func;
-				acc = $temp$acc;
-				dict = $temp$dict;
-				continue foldl;
-			}
-		}
-	});
 var elm$core$Dict$merge = F6(
 	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
 		var stepState = F3(
