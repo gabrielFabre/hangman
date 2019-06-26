@@ -75,6 +75,7 @@ type Msg
     | OnClickReplay
     | OnInput String
     | OnClickValid
+    | OnClickHome
 
 
 update : Msg -> Page -> ( Page, Cmd Msg )
@@ -123,9 +124,13 @@ update msg page =
                     ( Game model, Cmd.none )
 
         ( Game model, OnClickReplay ) ->
-            ( Game { model | word = Nothing, counter = 10, triedChars = [] }
-            , generateRandomIndex model.words
-            )
+            if List.isEmpty model.words then
+                ( Input "", Cmd.none )
+
+            else
+                ( Game { model | word = Nothing, counter = 10, triedChars = [] }
+                , generateRandomIndex model.words
+                )
 
         ( Input _, OnInput input ) ->
             case isInputGood input of
@@ -144,6 +149,9 @@ update msg page =
                 }
             , Cmd.none
             )
+
+        ( Game model, onClickHome ) ->
+            ( Home, Cmd.none )
 
         _ ->
             ( page, Cmd.none )
@@ -250,6 +258,7 @@ view page =
                         , imageView model.counter
                         , div [] [ text "Vous avez gagné !" ]
                         , buttonReplay
+                        , buttonHome
                         ]
 
                 Lost word ->
@@ -258,6 +267,7 @@ view page =
                         , imageView model.counter
                         , div [] [ text "Vous avez perdu !" ]
                         , buttonReplay
+                        , buttonHome
                         ]
 
                 Playing word ->
@@ -275,16 +285,33 @@ view page =
                     [ css
                         [ margin (px 10)
                         , marginBottom (px 10)
+                        , fontSize (px 20)
                         ]
                     ]
                     [ text "Joueur A : choisissez un mot à faire deviner au joueur B : " ]
-                , input [ onInput OnInput, value string ] []
+                , input
+                    [ css
+                        [ marginTop (px 30)
+                        , marginBottom (px 10)
+                        ]
+                    , onInput OnInput
+                    , value string
+                    ]
+                    []
                 , div []
                     [ button
                         [ onClick OnClickValid
                         , css
                             [ marginTop (px 15)
                             , marginBottom (px 15)
+                            , fontSize (px 18)
+                            , padding (px 5)
+                            , backgroundColor (rgb 57 179 112)
+                            , color (rgb 0 0 0)
+                            , borderRadius (px 10)
+                            , border (px 0)
+                            , disabled
+                                [ backgroundColor (rgb 200 200 200) ]
                             ]
                         , Html.Styled.Attributes.disabled (String.length string < 3)
                         ]
@@ -366,6 +393,31 @@ keyboard triedChars =
 imageView : Int -> Html msg
 imageView counter =
     img [ src ("images/step" ++ String.fromInt counter ++ ".svg") ] []
+
+
+buttonHome : Html Msg
+buttonHome =
+    div
+        [ css
+            [ borderRadius (px 5)
+            , marginTop (rem 2)
+            , fontSize (px 12)
+            ]
+        ]
+        [ button
+            [ onClick OnClickHome
+            , css
+                [ color (rgb 255 255 255)
+                , backgroundColor (rgb 255 165 0)
+                , borderRadius (px 7)
+                , padding2 (px 10) (px 15)
+                , border zero
+                , paddingLeft (px 25)
+                , paddingRight (px 25)
+                ]
+            ]
+            [ text "Home" ]
+        ]
 
 
 buttonReplay : Html Msg

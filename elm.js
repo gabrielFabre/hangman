@@ -6382,12 +6382,19 @@ var author$project$Pendu$pickWord = F2(
 				elm$core$Array$fromList(list)));
 	});
 var elm$core$Debug$log = _Debug_log;
+var elm$core$List$isEmpty = function (xs) {
+	if (!xs.b) {
+		return true;
+	} else {
+		return false;
+	}
+};
 var elm$core$String$toUpper = _String_toUpper;
 var author$project$Main$update = F2(
 	function (msg, page) {
 		var _n0 = A2(elm$core$Debug$log, 'msg', msg);
 		var _n1 = _Utils_Tuple2(page, msg);
-		_n1$10:
+		_n1$11:
 		while (true) {
 			switch (_n1.a.$) {
 				case 'Home':
@@ -6406,9 +6413,39 @@ var author$project$Main$update = F2(
 								author$project$Main$Input(''),
 								elm$core$Platform$Cmd$none);
 						default:
-							break _n1$10;
+							break _n1$11;
 					}
-				case 'Game':
+				case 'Input':
+					switch (_n1.b.$) {
+						case 'OnInput':
+							var input = _n1.b.a;
+							var _n8 = author$project$Main$isInputGood(input);
+							if (_n8.$ === 'Just') {
+								var validString = _n8.a;
+								return _Utils_Tuple2(
+									author$project$Main$Input(validString),
+									elm$core$Platform$Cmd$none);
+							} else {
+								return _Utils_Tuple2(page, elm$core$Platform$Cmd$none);
+							}
+						case 'OnClickValid':
+							var string = _n1.a.a;
+							var _n9 = _n1.b;
+							return _Utils_Tuple2(
+								author$project$Main$Game(
+									{
+										counter: 10,
+										triedChars: _List_Nil,
+										word: elm$core$Maybe$Just(
+											author$project$Pendu$simple(
+												elm$core$String$toUpper(string))),
+										words: _List_Nil
+									}),
+								elm$core$Platform$Cmd$none);
+						default:
+							break _n1$11;
+					}
+				default:
 					switch (_n1.b.$) {
 						case 'OnClickKey':
 							var model = _n1.a.a;
@@ -6462,44 +6499,18 @@ var author$project$Main$update = F2(
 						case 'OnClickReplay':
 							var model = _n1.a.a;
 							var _n7 = _n1.b;
-							return _Utils_Tuple2(
+							return elm$core$List$isEmpty(model.words) ? _Utils_Tuple2(
+								author$project$Main$Input(''),
+								elm$core$Platform$Cmd$none) : _Utils_Tuple2(
 								author$project$Main$Game(
 									_Utils_update(
 										model,
 										{counter: 10, triedChars: _List_Nil, word: elm$core$Maybe$Nothing})),
 								author$project$Main$generateRandomIndex(model.words));
 						default:
-							break _n1$10;
-					}
-				default:
-					switch (_n1.b.$) {
-						case 'OnInput':
-							var input = _n1.b.a;
-							var _n8 = author$project$Main$isInputGood(input);
-							if (_n8.$ === 'Just') {
-								var validString = _n8.a;
-								return _Utils_Tuple2(
-									author$project$Main$Input(validString),
-									elm$core$Platform$Cmd$none);
-							} else {
-								return _Utils_Tuple2(page, elm$core$Platform$Cmd$none);
-							}
-						case 'OnClickValid':
-							var string = _n1.a.a;
-							var _n9 = _n1.b;
-							return _Utils_Tuple2(
-								author$project$Main$Game(
-									{
-										counter: 10,
-										triedChars: _List_Nil,
-										word: elm$core$Maybe$Just(
-											author$project$Pendu$simple(
-												elm$core$String$toUpper(string))),
-										words: _List_Nil
-									}),
-								elm$core$Platform$Cmd$none);
-						default:
-							break _n1$10;
+							var model = _n1.a.a;
+							var onClickHome = _n1.b;
+							return _Utils_Tuple2(author$project$Main$Home, elm$core$Platform$Cmd$none);
 					}
 			}
 		}
@@ -6511,7 +6522,7 @@ var author$project$Main$OnClickValid = {$: 'OnClickValid'};
 var author$project$Main$OnInput = function (a) {
 	return {$: 'OnInput', a: a};
 };
-var author$project$Main$OnClickReplay = {$: 'OnClickReplay'};
+var author$project$Main$OnClickHome = {$: 'OnClickHome'};
 var rtfeldman$elm_css$Css$Preprocess$AppendProperty = function (a) {
 	return {$: 'AppendProperty', a: a};
 };
@@ -6545,6 +6556,8 @@ var rtfeldman$elm_css$Css$prop2 = F3(
 					[argA.value, argB.value])));
 	});
 var rtfeldman$elm_css$Css$padding2 = rtfeldman$elm_css$Css$prop2('padding');
+var rtfeldman$elm_css$Css$paddingLeft = rtfeldman$elm_css$Css$prop1('padding-left');
+var rtfeldman$elm_css$Css$paddingRight = rtfeldman$elm_css$Css$prop1('padding-right');
 var rtfeldman$elm_css$Css$PxUnits = {$: 'PxUnits'};
 var elm$core$String$fromFloat = _String_fromNumber;
 var rtfeldman$elm_css$Css$Structure$Compatible = {$: 'Compatible'};
@@ -6712,13 +6725,6 @@ var Skinney$murmur3$Murmur3$hashString = F2(
 				A4(Skinney$murmur3$Murmur3$HashData, 0, seed, 0, 0),
 				str));
 	});
-var elm$core$List$isEmpty = function (xs) {
-	if (!xs.b) {
-		return true;
-	} else {
-		return false;
-	}
-};
 var elm$core$List$singleton = function (value) {
 	return _List_fromArray(
 		[value]);
@@ -8377,6 +8383,54 @@ var rtfeldman$elm_css$Html$Styled$Events$onClick = function (msg) {
 		'click',
 		elm$json$Json$Decode$succeed(msg));
 };
+var author$project$Main$buttonHome = A2(
+	rtfeldman$elm_css$Html$Styled$div,
+	_List_fromArray(
+		[
+			rtfeldman$elm_css$Html$Styled$Attributes$css(
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Css$borderRadius(
+					rtfeldman$elm_css$Css$px(5)),
+					rtfeldman$elm_css$Css$marginTop(
+					rtfeldman$elm_css$Css$rem(2)),
+					rtfeldman$elm_css$Css$fontSize(
+					rtfeldman$elm_css$Css$px(12))
+				]))
+		]),
+	_List_fromArray(
+		[
+			A2(
+			rtfeldman$elm_css$Html$Styled$button,
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$Events$onClick(author$project$Main$OnClickHome),
+					rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Css$color(
+							A3(rtfeldman$elm_css$Css$rgb, 255, 255, 255)),
+							rtfeldman$elm_css$Css$backgroundColor(
+							A3(rtfeldman$elm_css$Css$rgb, 255, 165, 0)),
+							rtfeldman$elm_css$Css$borderRadius(
+							rtfeldman$elm_css$Css$px(7)),
+							A2(
+							rtfeldman$elm_css$Css$padding2,
+							rtfeldman$elm_css$Css$px(10),
+							rtfeldman$elm_css$Css$px(15)),
+							rtfeldman$elm_css$Css$border(rtfeldman$elm_css$Css$zero),
+							rtfeldman$elm_css$Css$paddingLeft(
+							rtfeldman$elm_css$Css$px(25)),
+							rtfeldman$elm_css$Css$paddingRight(
+							rtfeldman$elm_css$Css$px(25))
+						]))
+				]),
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$text('Home')
+				]))
+		]));
+var author$project$Main$OnClickReplay = {$: 'OnClickReplay'};
 var author$project$Main$buttonReplay = A2(
 	rtfeldman$elm_css$Html$Styled$div,
 	_List_fromArray(
@@ -8681,6 +8735,7 @@ var rtfeldman$elm_css$Css$row = {flexDirection: rtfeldman$elm_css$Css$Structure$
 var rtfeldman$elm_css$Css$column = _Utils_update(
 	rtfeldman$elm_css$Css$row,
 	{value: 'column'});
+var rtfeldman$elm_css$Css$disabled = rtfeldman$elm_css$Css$pseudoClass('disabled');
 var rtfeldman$elm_css$Css$displayFlex = A2(rtfeldman$elm_css$Css$property, 'display', 'flex');
 var rtfeldman$elm_css$Css$flexDirection = rtfeldman$elm_css$Css$prop1('flex-direction');
 var rtfeldman$elm_css$Css$flexGrow = rtfeldman$elm_css$Css$prop1('flex-grow');
@@ -8706,8 +8761,6 @@ var rtfeldman$elm_css$Css$justifyContent = function (fn) {
 		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
 };
 var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
-var rtfeldman$elm_css$Css$paddingLeft = rtfeldman$elm_css$Css$prop1('padding-left');
-var rtfeldman$elm_css$Css$paddingRight = rtfeldman$elm_css$Css$prop1('padding-right');
 var rtfeldman$elm_css$Html$Styled$input = rtfeldman$elm_css$Html$Styled$node('input');
 var elm$json$Json$Encode$bool = _Json_wrap;
 var rtfeldman$elm_css$Html$Styled$Attributes$boolProperty = F2(
@@ -8894,7 +8947,8 @@ var author$project$Main$view = function (page) {
 									[
 										rtfeldman$elm_css$Html$Styled$text('Vous avez gagné !')
 									])),
-								author$project$Main$buttonReplay
+								author$project$Main$buttonReplay,
+								author$project$Main$buttonHome
 							]));
 				case 'Lost':
 					var word = _n1.a;
@@ -8915,7 +8969,8 @@ var author$project$Main$view = function (page) {
 									[
 										rtfeldman$elm_css$Html$Styled$text('Vous avez perdu !')
 									])),
-								author$project$Main$buttonReplay
+								author$project$Main$buttonReplay,
+								author$project$Main$buttonHome
 							]));
 				default:
 					var word = _n1.a;
@@ -8952,7 +9007,9 @@ var author$project$Main$view = function (page) {
 										rtfeldman$elm_css$Css$margin(
 										rtfeldman$elm_css$Css$px(10)),
 										rtfeldman$elm_css$Css$marginBottom(
-										rtfeldman$elm_css$Css$px(10))
+										rtfeldman$elm_css$Css$px(10)),
+										rtfeldman$elm_css$Css$fontSize(
+										rtfeldman$elm_css$Css$px(20))
 									]))
 							]),
 						_List_fromArray(
@@ -8963,6 +9020,14 @@ var author$project$Main$view = function (page) {
 						rtfeldman$elm_css$Html$Styled$input,
 						_List_fromArray(
 							[
+								rtfeldman$elm_css$Html$Styled$Attributes$css(
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Css$marginTop(
+										rtfeldman$elm_css$Css$px(30)),
+										rtfeldman$elm_css$Css$marginBottom(
+										rtfeldman$elm_css$Css$px(10))
+									])),
 								rtfeldman$elm_css$Html$Styled$Events$onInput(author$project$Main$OnInput),
 								rtfeldman$elm_css$Html$Styled$Attributes$value(string)
 							]),
@@ -8983,7 +9048,25 @@ var author$project$Main$view = function (page) {
 												rtfeldman$elm_css$Css$marginTop(
 												rtfeldman$elm_css$Css$px(15)),
 												rtfeldman$elm_css$Css$marginBottom(
-												rtfeldman$elm_css$Css$px(15))
+												rtfeldman$elm_css$Css$px(15)),
+												rtfeldman$elm_css$Css$fontSize(
+												rtfeldman$elm_css$Css$px(18)),
+												rtfeldman$elm_css$Css$padding(
+												rtfeldman$elm_css$Css$px(5)),
+												rtfeldman$elm_css$Css$backgroundColor(
+												A3(rtfeldman$elm_css$Css$rgb, 57, 179, 112)),
+												rtfeldman$elm_css$Css$color(
+												A3(rtfeldman$elm_css$Css$rgb, 0, 0, 0)),
+												rtfeldman$elm_css$Css$borderRadius(
+												rtfeldman$elm_css$Css$px(10)),
+												rtfeldman$elm_css$Css$border(
+												rtfeldman$elm_css$Css$px(0)),
+												rtfeldman$elm_css$Css$disabled(
+												_List_fromArray(
+													[
+														rtfeldman$elm_css$Css$backgroundColor(
+														A3(rtfeldman$elm_css$Css$rgb, 200, 200, 200))
+													]))
 											])),
 										rtfeldman$elm_css$Html$Styled$Attributes$disabled(
 										elm$core$String$length(string) < 3)
